@@ -1,43 +1,41 @@
-import axios from "axios"
+import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
-// Create axios instance with base configuration
+// Use environment variable for base URL
+const backendURL: string =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+// Create axios instance
 export const api = axios.create({
-  baseURL: "https://womecare-backend.onrender.com/api", // ✅ Changed from localhost to Render
+  baseURL: `${backendURL}/api`,
   headers: {
     "Content-Type": "application/json",
   },
   timeout: 10000,
-})
+});
 
 // Request interceptor
 api.interceptors.request.use(
-  (config) => {
-    // Add auth token if available
-    const token = localStorage.getItem("token")
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+  (config: AxiosRequestConfig) => {
+    const token = localStorage.getItem("token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return config
+    return config;
   },
-  (error) => {
-    return Promise.reject(error)
-  },
-)
+  (error) => Promise.reject(error)
+);
 
 // Response interceptor
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response: AxiosResponse) => response,
   (error) => {
-    // Handle common errors
     if (error.response?.status === 401) {
-      // Unauthorized - clear auth data
-      localStorage.removeItem("user")
-      localStorage.removeItem("token")
-      window.location.href = "/auth/login"
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+      window.location.href = "/auth/login";
     }
+    return Promise.reject(error);
+  }
+);
 
-    return Promise.reject(error)
-  },
-)
+export default api;
