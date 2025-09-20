@@ -42,6 +42,8 @@ interface PredictionData {
   cycle_lengths_used: number[]
   last_period_date: string
   prediction_accuracy: string
+  cycle_variance: number
+  total_periods_analyzed: number
 }
 
 export default function PeriodTrackerPage() {
@@ -329,13 +331,29 @@ export default function PeriodTrackerPage() {
                 </div>
                 {prediction.cycle_lengths_used.length > 0 && (
                   <div className="pt-4 border-t border-pink-200">
-                    <p className="text-sm text-gray-600 mb-2">Cycle Lengths Used:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {prediction.cycle_lengths_used.map((length, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {length} days
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-600 mb-2">Cycle Lengths Used:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {prediction.cycle_lengths_used.map((length, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {length} days
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-600 mb-1">Cycle Regularity:</p>
+                        <Badge 
+                          variant={prediction.cycle_variance <= 3 ? 'default' : prediction.cycle_variance <= 7 ? 'secondary' : 'destructive'}
+                          className="text-xs"
+                        >
+                          {prediction.cycle_variance <= 3 ? 'Very Regular' : prediction.cycle_variance <= 7 ? 'Regular' : 'Irregular'}
                         </Badge>
-                      ))}
+                        <p className="text-xs text-gray-500 mt-1">
+                          Based on {prediction.total_periods_analyzed} period{prediction.total_periods_analyzed !== 1 ? 's' : ''}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}

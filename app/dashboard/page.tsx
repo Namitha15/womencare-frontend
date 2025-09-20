@@ -45,11 +45,18 @@ export default function DashboardPage() {
   }
 
   const triggerSOS = async () => {
+    // Show immediate feedback
+    toast({
+      title: "🚨 Sending SOS Alert...",
+      description: "Getting your location and notifying emergency contacts...",
+      duration: 3000,
+    })
+
     try {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(async (position) => {
           try {
-            await api.post(`/sos/${user.id}`, {
+            const response = await api.post(`/sos/${user.id}`, {
               latitude: position.coords.latitude,
               longitude: position.coords.longitude,
               accuracy: position.coords.accuracy,
@@ -57,63 +64,77 @@ export default function DashboardPage() {
               message: "Emergency assistance needed",
             })
             
+            // Show success with detailed information
+            const notificationsSent = response.data.notifications_sent || 0
+            const locationShared = response.data.location_shared
+            
             toast({
               title: "🚨 SOS Alert Sent Successfully!",
-              description: "Your emergency contacts have been notified with your location. Help is on the way!",
-              duration: 5000,
+              description: `Emergency contacts notified (${notificationsSent} contacts). ${locationShared ? 'Location shared.' : 'Location unavailable.'} Help is on the way!`,
+              duration: 8000,
             })
             
             fetchDashboardData()
-          } catch (error) {
+          } catch (error: any) {
+            console.error("SOS Error:", error)
             toast({
               title: "❌ Failed to Send SOS Alert",
-              description: "There was an error sending your emergency alert. Please try again or call emergency services directly.",
+              description: error.response?.data?.error || "There was an error sending your emergency alert. Please try again or call emergency services directly.",
               variant: "destructive",
-              duration: 5000,
+              duration: 8000,
             })
           }
         }, (error) => {
+          console.error("Location Error:", error)
           // Location error - still send SOS without location
           api.post(`/sos/${user.id}`, {
             alert_type: "emergency",
             message: "Emergency assistance needed - location unavailable",
-          }).then(() => {
+          }).then((response) => {
+            const notificationsSent = response.data.notifications_sent || 0
             toast({
               title: "🚨 SOS Alert Sent Successfully!",
-              description: "Your emergency contacts have been notified. Location could not be determined, but help has been alerted!",
-              duration: 5000,
+              description: `Emergency contacts notified (${notificationsSent} contacts). Location could not be determined, but help has been alerted!`,
+              duration: 8000,
             })
             fetchDashboardData()
-          }).catch(() => {
+          }).catch((err: any) => {
+            console.error("SOS Error (no location):", err)
             toast({
               title: "❌ Failed to Send SOS Alert",
-              description: "There was an error sending your emergency alert. Please try again or call emergency services directly.",
+              description: err.response?.data?.error || "There was an error sending your emergency alert. Please try again or call emergency services directly.",
               variant: "destructive",
-              duration: 5000,
+              duration: 8000,
             })
           })
+        }, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 30000
         })
       } else {
         // No geolocation support - send SOS without location
-        await api.post(`/sos/${user.id}`, {
+        const response = await api.post(`/sos/${user.id}`, {
           alert_type: "emergency",
           message: "Emergency assistance needed - geolocation not supported",
         })
         
+        const notificationsSent = response.data.notifications_sent || 0
         toast({
           title: "🚨 SOS Alert Sent Successfully!",
-          description: "Your emergency contacts have been notified. Location services are not available on this device.",
-          duration: 5000,
+          description: `Emergency contacts notified (${notificationsSent} contacts). Location services are not available on this device.`,
+          duration: 8000,
         })
         
         fetchDashboardData()
       }
-    } catch (err) {
+    } catch (err: any) {
+      console.error("SOS Error:", err)
       toast({
         title: "❌ Failed to Send SOS Alert",
-        description: "There was an error sending your emergency alert. Please try again or call emergency services directly.",
+        description: err.response?.data?.error || "There was an error sending your emergency alert. Please try again or call emergency services directly.",
         variant: "destructive",
-        duration: 5000,
+        duration: 8000,
       })
     }
   }
