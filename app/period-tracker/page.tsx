@@ -38,6 +38,10 @@ interface PredictionData {
   predicted_date: string
   average_cycle_length: number
   message: string
+  days_until_next: number
+  cycle_lengths_used: number[]
+  last_period_date: string
+  prediction_accuracy: string
 }
 
 export default function PeriodTrackerPage() {
@@ -82,9 +86,10 @@ export default function PeriodTrackerPage() {
     try {
       const response = await api.get(`/period-tracker/${user.id}/predict`)
       setPrediction(response.data)
-    } catch (err) {
+    } catch (err: any) {
       // Prediction might not be available if not enough data
-      console.log("Prediction not available")
+      console.log("Prediction not available:", err.response?.data?.error || "Unknown error")
+      setPrediction(null)
     }
   }
 
@@ -281,30 +286,78 @@ export default function PeriodTrackerPage() {
         </div>
 
         {/* Prediction Card */}
-        {prediction && (
+        {prediction ? (
           <Card className="mb-8 bg-gradient-to-r from-pink-50 to-purple-50 border-pink-200">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <TrendingUp className="h-5 w-5 text-pink-600" />
                 <span>Next Period Prediction</span>
+                <Badge 
+                  variant={prediction.prediction_accuracy === 'high' ? 'default' : prediction.prediction_accuracy === 'medium' ? 'secondary' : 'outline'}
+                  className="ml-2"
+                >
+                  {prediction.prediction_accuracy} accuracy
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Predicted Next Period</p>
-                  <p className="text-2xl font-bold text-pink-600">
-                    {new Date(prediction.predicted_date).toLocaleDateString()}
-                  </p>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Predicted Next Period</p>
+                    <p className="text-2xl font-bold text-pink-600">
+                      {new Date(prediction.predicted_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">{prediction.message}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Average Cycle Length</p>
+                    <p className="text-2xl font-bold text-purple-600">{prediction.average_cycle_length} days</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Based on {prediction.cycle_lengths_used.length} cycle{prediction.cycle_lengths_used.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-1">Last Period</p>
+                    <p className="text-lg font-semibold text-gray-700">
+                      {new Date(prediction.last_period_date).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {Math.abs(prediction.days_until_next)} days {prediction.days_until_next >= 0 ? 'until' : 'since'} next period
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Average Cycle Length</p>
-                  <p className="text-2xl font-bold text-purple-600">{prediction.average_cycle_length} days</p>
-                </div>
+                {prediction.cycle_lengths_used.length > 0 && (
+                  <div className="pt-4 border-t border-pink-200">
+                    <p className="text-sm text-gray-600 mb-2">Cycle Lengths Used:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {prediction.cycle_lengths_used.map((length, index) => (
+                        <Badge key={index} variant="outline" className="text-xs">
+                          {length} days
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
-        )}
+        ) : periods.length >= 2 ? (
+          <Card className="mb-8 bg-yellow-50 border-yellow-200">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TrendingUp className="h-5 w-5 text-yellow-600" />
+                <span>Prediction Unavailable</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-yellow-800">
+                We need at least 2 period entries to make accurate predictions. 
+                Please log more periods to get predictions.
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
 
         {/* Period History */}
         {periods.length > 0 ? (
