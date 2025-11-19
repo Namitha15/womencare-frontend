@@ -1,3 +1,9 @@
+# Environment variables
+.env
+.env.development.local
+.env.test.local
+.env.production.local
+
 # Dependencies
 node_modules/
 npm-debug.log*
@@ -9,8 +15,6 @@ yarn-error.log*
 out/
 build/
 dist/
-
-
 
 # Python
 __pycache__/
