@@ -2,7 +2,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from "axios";
 
 // Use environment variable for base URL
 const backendURL: string =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  process.env.NEXT_PUBLIC_API_URL || "https://womecare-backend-sohr.onrender.com";
 
 // Create axios instance
 export const api = axios.create({
